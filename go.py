@@ -3,16 +3,32 @@
 
 import zipfile
 import sqlite3
-import tempfile
+import acoustid
+import chromaprint
 import youtube_dl
-import musicbrainzngs
 
-# Params
-input_zip = "NewPipeData-20210215_104140.zip"
-newpipe_db_file = "newpipe.db"
-query = "select * from streams;" # à virer plus tard
-# Global variable use to get downloaded file name
-output_filename = ''
+filename = './a.m4a'
+acoustic_id_api_key = "MZBW9HJUzd"
+for score, recording_id, title, artist in acoustid.match(acoustic_id_api_key, filename):
+    pass
+
+
+
+def main(input_zip):
+    # newpipe_db_file = "newpipe.db"
+    # query = "select * from streams;"
+    #
+    # with zipfile.ZipFile(input_zip) as newpipe_zipfile:
+    #     newpipe_zipfile.extract(newpipe_db_file, tempfile.gettempdir())
+    #
+    # conn = create_connection(tempfile.gettempdir() + '/' + newpipe_db_file)
+    # if conn is None: exit(-1) # marche pô
+    #
+    # resources_list = query_sqlite(conn, query)
+    # conn.close()
+    # for  resource in resources_list:
+    #     filename = ytd(resource[3], resource[2])
+    filename = './a.m4a'
 
 
 def create_connection(db_file):
@@ -48,61 +64,44 @@ def query_sqlite(conn, query):
     return None
 
 
-# def extract_zip(input_zip, name):
-#     input_zip = zipfile.ZipFile(input_zip)
-#     return {name: input_zip.read(name) for name in input_zip.namelist()}
+def ytd(title, url ):
+    """
+    TO DO les extensions
+    :param title:
+    :param url:
+    :return:
+    """
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'm4a',
+            # 'preferredquality': '192',
+        }],
+        'progress_hooks': [download_hook],
+        'outtmpl': title + '.%(ext)s',
+    }
+
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
+    return(title + ".m4a")
 
 def download_hook(d):
+    """
+    Manages YTDL hooks
+    :param d:
+    :return:
+    """
     if d['status'] == 'finished':
         print('Done downloading, now converting ...')
         global output_filename
         output_filename =d['filename']
 
 
-"""
-query = "select * from streams;"
-with zipfile.ZipFile(input_zip) as newpipe_zipfile:
-    newpipe_zipfile.extract(newpipe_db_file, tempfile.gettempdir())
 
-conn = create_connection(tempfile.gettempdir() + '/' + newpipe_db_file)
-if conn is None: exit(-1) # marche pô
+# To do Itération sur results
 
-result = query_sqlite(conn, query)
-print('coucou')
-print(result)
-conn.close()
-"""
-
-ydl_opts = {
-    'format': 'bestaudio/best',
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'm4a',
-       # 'preferredquality': '192',
-    }],
-    'progress_hooks': [download_hook],
-}
-
-with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-    # ydl.download([result[0][2]])
-    ydl.download(['https://www.youtube.com/watch?v=1kKk2qshv5Q'])
-#     dl_info = ydl.extract_info(
-#         'https://www.youtube.com/watch?v=1kKk2qshv5Q', download=False
-#   )
-# dl_file = dl_info['title']+'.mp3'
-output_filename = output_filename[:-3]+'mp3'
-print(output_filename)
-
-# idée récupérer le nom de fichier à partir du tuple récupéré lors de la requête.
-def download(self, filename, directory, url):
-    ydl_opts = {
-        "format": "best",
-        "outtmpl": str(directory / (filename + ".%(ext)s")),
-        "progress_hooks": [self._hook],
-        "playlistend": 1,
-        "nooverwrites": True,
-        "quiet": True
-    }
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-
+# if __name__ == '__main__':
+#     # Params
+#     input_zip = "NewPipeData-20210215_104140.zip"
+#     main(input_zip)
